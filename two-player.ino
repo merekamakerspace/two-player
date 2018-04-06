@@ -38,6 +38,8 @@ int player_end[] = {0, 37};
 
 
 unsigned long last_twinkle = millis();
+unsigned long last_move = millis();
+
 unsigned char hue = 0;
 unsigned int delay_time = 100;
 unsigned char fade_rate = 100;
@@ -100,21 +102,6 @@ void show_digit(int digit, int start_row) {
 	FastLED.show();
 }
 
-void movePlayer(int player_id) {
-	//Increment player token
-	player_start[player_id]++;
-	player_end[player_id]++;
-
-	if (player_start[player_id] == TRACK_LEN) {
-		player_start[player_id] = 0;
-	}
-
-	if (player_end[player_id] == TRACK_LEN) {
-		player_end[player_id] = 0;
-	}
-
-}
-
 void drawPlayer(int pid) {
 	// Serial.print(player_start[pid]);
 	// Serial.print(" ");
@@ -156,6 +143,24 @@ void drawPlayer(int pid) {
 	}
 	//Serial.println();
 }
+
+
+void movePlayer(int player_id) {
+	//Increment player token
+	player_start[player_id]++;
+	player_end[player_id]++;
+
+	if (player_start[player_id] == TRACK_LEN) {
+		player_start[player_id] = 0;
+	}
+
+	if (player_end[player_id] == TRACK_LEN) {
+		player_end[player_id] = 0;
+	}
+	last_move = millis();
+
+}
+
 
 
 void processSerial() {
@@ -208,12 +213,14 @@ void processSerial() {
 			break;
 		case 'q':
 			movePlayer(RED_PLAYER);
+			drawPlayer(BLUE_PLAYER);
 			drawPlayer(RED_PLAYER);
 			FastLED.show();
 
 			break;
 		case 'p':
 			movePlayer(BLUE_PLAYER);
+			drawPlayer(RED_PLAYER);
 			drawPlayer(BLUE_PLAYER);
 			FastLED.show();
 
@@ -277,7 +284,7 @@ void growPlayer(int player_id) {
 	if (player_end[player_id] == TRACK_LEN) {
 		player_end[player_id] = 0;
 	}
-
+	last_move = millis();
 
 }
 
@@ -423,11 +430,17 @@ void loop() {
 		//Serial.println("here again");
 
 		//for(int i =0; i < 100; i++){
-		drawPlayer(RED_PLAYER);
-		drawPlayer(BLUE_PLAYER);
-		FastLED.show();
-
-		fadeAll();
+		//drawPlayer(RED_PLAYER);
+		//drawPlayer(BLUE_PLAYER);
+		//FastLED.show();
+		if(millis() - last_move > delay_time){
+			fadeAll();
+			drawPlayer(RED_PLAYER);
+			drawPlayer(BLUE_PLAYER);
+			FastLED.show();
+			last_move = millis();	
+		}
+		
 		//FastLED.show();
 
 		//}
