@@ -2,6 +2,7 @@
 #include "digits.h"
 #include "track.h"
 
+
 // How many leds in your strip?
 #define NUM_LEDS_1 150
 #define NUM_LEDS_2 98
@@ -21,6 +22,10 @@
 #define BIKE1 A3
 #define BIKE2 A0
 
+#define RED_HUE 96
+#define BLUE_HUE 160
+
+//SimplexNoise sn;
 
 
 enum {RED_PLAYER, BLUE_PLAYER};
@@ -42,14 +47,14 @@ unsigned long last_twinkle = millis();
 unsigned long last_move = millis();
 
 unsigned char hue = 0;
-unsigned int delay_time = 100;
+unsigned int delay_time = 30;
 unsigned char fade_rate = 100;
 unsigned long last_grow = millis();
 
 int player_energy[] = {0, 0};
 int player_adc[] = {BIKE1, BIKE2};
 
-int max_energy[] = {10, 10};
+int max_energy[] = {100, 100};
 
 
 void fadeAll()  {
@@ -110,19 +115,9 @@ void show_digit(int digit, int start_row) {
 }
 
 void drawPlayer(int pid) {
-	// Serial.print(player_start[pid]);
-	// Serial.print(" ");
-	// Serial.print(player_end[pid]);
 
 	for (int i = player_start[pid]; i >= player_end[pid]; i--) {
-		// Serial.print("\tnorm ");
-		// Serial.print(i);
-		// Serial.print(" ");
-		// Serial.print(TRACK[i]);
 		leds[TRACK[i]] = player_colour[pid];
-
-
-
 	}
 
 	//check that doesn't wrap around 0
@@ -130,25 +125,13 @@ void drawPlayer(int pid) {
 
 		for (int i = TRACK_LEN - 1; i >= player_end[pid]; i--) {
 			leds[TRACK[i]] = player_colour[pid];
-
-			// Serial.print("\twrap ");
-			// Serial.print(i);
-			// Serial.print(" ");
-			// Serial.print(TRACK[i]);
-
 		}
 
 		for (int i = 0; i <= player_start[pid]; i++ ) {
 			leds[TRACK[i]] = player_colour[pid];
-			// Serial.print("\twrap ");
-			// Serial.print(i);
-			// Serial.print(" ");
-			// Serial.print(TRACK[i]);
-
 		}
 
 	}
-	//Serial.println();
 }
 
 
@@ -248,7 +231,7 @@ void serialEvent() {
 
 void readADC(int pid) {
 
-	int val = analogRead(player_adc[pid]) / 50;
+	int val = analogRead(player_adc[pid]) / 10;
 	player_energy[pid] += val;
 	if (val > 0) {
 		Serial.print(pid);
@@ -260,8 +243,12 @@ void readADC(int pid) {
 	}
 
 	if (player_energy[pid] > max_energy[pid]) {
+		Serial.print(pid);
+		Serial.print(" moved ");
+		Serial.println(player_start[pid]);
 		player_energy[pid] = 0;
 		movePlayer(pid);
+		//drawPlayer(pid);
 
 	}
 
@@ -354,6 +341,8 @@ int collision () {
 int matrix_row = NUM_ROWS;
 int matrix_col = random(LEDS_PER_ROW);
 
+CRGB matrix_color = player_colour[0];
+
 void matrix() {
 
 	for (int i = 0; i < NUM_LEDS; i++) {
@@ -363,7 +352,12 @@ void matrix() {
 	if (matrix_row <= 0) {
 		matrix_row = NUM_ROWS;
 		matrix_col = random(LEDS_PER_ROW);
-		hue += 42;
+		if (matrix_color == player_colour[0]) {
+			matrix_color  = player_colour[1];
+		} else {
+			matrix_color = player_colour[0];
+		}
+		//hue += 128;
 	}
 
 	if (millis() - last_twinkle > 100) {
@@ -375,7 +369,7 @@ void matrix() {
 			pixel  = ((LEDS_PER_ROW) * (matrix_row) ) + (LEDS_PER_ROW - 1 - matrix_col);
 			//pixel += 1;
 		}
-		leds[NUM_LEDS - pixel - 1] = CHSV(hue, 255, 255);
+		leds[NUM_LEDS - pixel - 1] =  matrix_color; //CHSV(hue, 255, 255);
 
 		FastLED.show();
 
@@ -446,7 +440,7 @@ void loop() {
 	case WAITING:
 		fadeAll();
 		matrix();
-
+		//noisyFire();
 		readADC(RED_PLAYER);
 		readADC(BLUE_PLAYER);
 
@@ -463,58 +457,31 @@ void loop() {
 	case START_GAME:
 		resetGame();
 		state = PLAYING;
+		drawPlayer(RED_PLAYER);
+		drawPlayer(BLUE_PLAYER);
 		break;
 
 	case PLAYING:
+		FastLED.clear();
 		readADC(RED_PLAYER);
+		drawPlayer(RED_PLAYER);
 		readADC(BLUE_PLAYER);
+		drawPlayer(BLUE_PLAYER);
+		FastLED.show();
 		if (collision()) {
 			state = WIN;
 			break;
 		}
 
 
-		//Serial.println("here");
-		wait(delay_time);
-		//Serial.println("here again");
-
-		//for(int i =0; i < 100; i++){
-		//drawPlayer(RED_PLAYER);
-		//drawPlayer(BLUE_PLAYER);
-		//FastLED.show();
-		if (millis() - last_move > delay_time) {
-			fadeAll();
-			drawPlayer(RED_PLAYER);
-			drawPlayer(BLUE_PLAYER);
-			FastLED.show();
-			last_move = millis();
-		}
-
-		//FastLED.show();
-
-		//}
-
 
 		if (millis() - last_grow > 3000) {
 			growPlayer(RED_PLAYER);
 			growPlayer(BLUE_PLAYER);
 			last_grow = millis();
-			// Serial.print("grow\t");
-			// Serial.print(player_start[RED_PLAYER]);
-			// Serial.print(" ");
-			// Serial.print(player_end[RED_PLAYER]);
-			// Serial.print(" ");
-			// Serial.print(player_start[RED_PLAYER] - player_end[RED_PLAYER]);
-			// Serial.print("\t");
-			// Serial.print(player_start[BLUE_PLAYER]);
-			// Serial.print(" ");
-			// Serial.print(player_end[BLUE_PLAYER]);
-			// Serial.print(" ");
-			// Serial.println(player_start[BLUE_PLAYER] - player_end[BLUE_PLAYER]);
 
 			drawPlayer(RED_PLAYER);
 			drawPlayer(BLUE_PLAYER);
-			//Serial.println("now here");
 
 			FastLED.show();
 
@@ -523,6 +490,7 @@ void loop() {
 		if (collision()) {
 			state = WIN;
 		}
+		wait(delay_time);
 
 		break;
 
