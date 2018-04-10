@@ -18,9 +18,10 @@
 #define DATA_PIN_1 7
 #define DATA_PIN_2 8
 
+#define BIKE1 A3
+#define BIKE2 A0
 
 
-#define MAX_ENERGY 500
 
 enum {RED_PLAYER, BLUE_PLAYER};
 
@@ -31,7 +32,7 @@ int state = WAITING;
 
 CRGB leds[NUM_LEDS];
 
-CRGB player_colour[] = {CRGB::Red, CRGB::Blue};
+CRGB player_colour[] = {CRGB::Green, CRGB::Blue};
 
 int player_start[] = {2, 39};
 int player_end[] = {0, 37};
@@ -44,6 +45,12 @@ unsigned char hue = 0;
 unsigned int delay_time = 100;
 unsigned char fade_rate = 100;
 unsigned long last_grow = millis();
+
+int player_energy[] = {0, 0};
+int player_adc[] = {BIKE1, BIKE2};
+
+int max_energy[] = {10, 10};
+
 
 void fadeAll()  {
 	for (int i = 0; i < NUM_LEDS; i++) {
@@ -239,6 +246,28 @@ void serialEvent() {
 
 }
 
+void readADC(int pid) {
+
+	int val = analogRead(player_adc[pid]) / 50;
+	player_energy[pid] += val;
+	if (val > 0) {
+		Serial.print(pid);
+		Serial.print(" ");
+		Serial.print(val);
+		Serial.print(" ");
+		Serial.println(player_energy[pid]);
+
+	}
+
+	if (player_energy[pid] > max_energy[pid]) {
+		player_energy[pid] = 0;
+		movePlayer(pid);
+
+	}
+
+}
+
+
 void testScreen() {
 	for (int i = 0; i < NUM_ROWS; i++) {
 		hue = map(i, 0, NUM_ROWS, 0, 160);
@@ -297,10 +326,15 @@ void resetGame() {
 
 	player_start[1] = 39;
 	player_end[1] = 37;
+
+	player_energy[0] = 0;
+	player_energy[1] = 0;
+
 	FastLED.clear();
 	FastLED.show();
 	fade_rate = 100;
 	last_grow = millis();
+
 
 }
 
@@ -412,6 +446,13 @@ void loop() {
 	case WAITING:
 		fadeAll();
 		matrix();
+
+		readADC(RED_PLAYER);
+		readADC(BLUE_PLAYER);
+
+		if (player_energy[0] > 5 || player_energy[1] > 5) {
+			state = COUNT_DOWN;
+		}
 		wait(100);
 		break;
 	case COUNT_DOWN:
@@ -425,6 +466,14 @@ void loop() {
 		break;
 
 	case PLAYING:
+		readADC(RED_PLAYER);
+		readADC(BLUE_PLAYER);
+		if (collision()) {
+			state = WIN;
+			break;
+		}
+
+
 		//Serial.println("here");
 		wait(delay_time);
 		//Serial.println("here again");
@@ -433,14 +482,14 @@ void loop() {
 		//drawPlayer(RED_PLAYER);
 		//drawPlayer(BLUE_PLAYER);
 		//FastLED.show();
-		if(millis() - last_move > delay_time){
+		if (millis() - last_move > delay_time) {
 			fadeAll();
 			drawPlayer(RED_PLAYER);
 			drawPlayer(BLUE_PLAYER);
 			FastLED.show();
-			last_move = millis();	
+			last_move = millis();
 		}
-		
+
 		//FastLED.show();
 
 		//}
@@ -485,7 +534,7 @@ void loop() {
 		//RED Wins
 		if (collision() ==  1) {
 			for (int i = 0; i < NUM_LEDS; i++) {
-				leds[i] = CRGB::Red;
+				leds[i] = CRGB::Green;
 			}
 
 		}
@@ -503,10 +552,11 @@ void loop() {
 			fadeAll();
 			delay(100);
 		}
-
+		resetGame();
 		//Show winner
 		state = WAITING;
 		fade_rate = 150;
+		FastLED.clear();
 		break;
 	case END_GAME:
 
