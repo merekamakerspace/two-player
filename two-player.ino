@@ -22,10 +22,20 @@
 #define BIKE1 A3
 #define BIKE2 A0
 
-#define RED_HUE 96
-#define BLUE_HUE 160
+const uint8_t kMatrixWidth  = 8;
+const uint8_t kMatrixHeight = 31;
+const bool    kMatrixSerpentineLayout = true;
 
-//SimplexNoise sn;
+
+
+
+//#define NUM_LEDS (kMatrixWidth * kMatrixHeight)
+#define MAX_DIMENSION ((kMatrixWidth>kMatrixHeight) ? kMatrixWidth : kMatrixHeight)
+
+static uint16_t _x;
+static uint16_t _y;
+static uint16_t _z;
+
 
 
 enum {RED_PLAYER, BLUE_PLAYER};
@@ -55,6 +65,20 @@ int player_energy[] = {0, 0};
 int player_adc[] = {BIKE1, BIKE2};
 
 int max_energy[] = {100, 100};
+
+uint16_t speed = 20; // speed is set dynamically once we've started up
+
+// Scale determines how far apart the pixels in our noise matrix are.  Try
+// changing these values around to see how it affects the motion of the display.  The
+// higher the value of scale, the more "zoomed out" the noise iwll be.  A value
+// of 1 will be so zoomed in, you'll mostly see solid colors.
+uint16_t scale = 30; // scale is set dynamically once we've started up
+
+// This is the array that we keep our computed noise values in
+uint8_t noise[NUM_LEDS];
+
+CRGBPalette16 currentPalette( OceanColors_p );
+
 
 
 void fadeAll()  {
@@ -379,6 +403,8 @@ void matrix() {
 }
 
 
+
+
 void setup() {
 
 
@@ -389,11 +415,67 @@ void setup() {
 	FastLED.addLeds<WS2812, DATA_PIN_1, RGB>(leds, 0, NUM_LEDS_1);
 	FastLED.addLeds<WS2812, DATA_PIN_2, RGB>(leds, NUM_LEDS_1, NUM_LEDS_2);
 
-	//testScreen();
+	testScreen();
 	FastLED.clear();
 	FastLED.show();
 
+	// Initialize our coordinates to some random values
+	_x = random16();
+	_y = random16();
+	_z = random16();
+
+
 }
+
+// Fill the x/y array of 8-bit noise values using the inoise8 function.
+void fillnoise8() {
+//	static uint8_t ihue = 0;
+
+
+	int pixel = inoise8(_x );//, _y , _z);
+//	Serial.println(pixel);
+	//uint8_t bri =  noise[NUM_LEDS - hue - 1];
+
+	leds[pixel] = player_colour[0];
+
+	pixel = inoise8(_x + 1000);//, _y + 1000, _z);
+	leds[pixel] = player_colour[1];
+
+	_z += speed;
+
+	// apply slow drift to X and Y, just for visual variation.
+	_x += speed / 8;
+	_y -= speed / 16;
+}
+
+void mapNoiseToLEDsUsingPalette()
+{
+//	static uint8_t ihue = 0;
+
+
+	//uint8_t index = noise[i];
+	//uint8_t bri =   noise[NUM_LEDS - i - 1];
+
+
+	//CRGB color = ColorFromPalette( currentPalette, index, bri);
+	//drawPixel(i, j, color);
+	//leds[XY(i, j)] = color;
+
+//	ihue += 1;
+}
+
+void noisyFire() {
+	// generate noise data
+	fillnoise8();
+
+	// convert the noise data to colors in the LED array
+	// using the current palette
+	//mapNoiseToLEDsUsingPalette();
+
+	FastLED.show();
+
+}
+
 
 
 void colours() {
@@ -435,9 +517,11 @@ void count_down() {
 
 void loop() {
 
+
 	switch (state) {
 
 	case WAITING:
+		fade_rate = 240;
 		fadeAll();
 		matrix();
 		//noisyFire();
