@@ -35,8 +35,8 @@ CRGB leds[NUM_LEDS];
 
 CRGB player_colour[] = {CRGB::Green, CRGB::Blue};
 
-int player_start[] = {2, 66};
-int player_end[] = {0, 64};
+int player_start[] = {2, 58};
+int player_end[] = {0, 56};
 
 
 unsigned long last_twinkle = millis();
@@ -315,8 +315,8 @@ void resetGame() {
 	player_start[0] = 2;
 	player_end[0] = 0;
 
-	player_start[1] = 66;
-	player_end[1] = 64;
+	player_start[1] = 58;
+	player_end[1] = 56;
 
 	player_energy[0] = 0;
 	player_energy[1] = 0;
@@ -438,7 +438,11 @@ void count_down() {
 }
 
 
-
+void drawTrack(){
+	for(int i =0; i < TRACK_LEN; i++){
+		leds[TRACK[i]] = CRGB(10,10, 10);
+	}
+}
 
 
 void loop() {
@@ -474,6 +478,7 @@ void loop() {
 	case PLAYING:
 		FastLED.clear();
 		readADC(RED_PLAYER);
+		drawTrack();
 		drawPlayer(RED_PLAYER);
 		readADC(BLUE_PLAYER);
 		drawPlayer(BLUE_PLAYER);
@@ -512,14 +517,14 @@ void loop() {
 		//RED Wins
 		if (collision() ==  1) {
 			for (int i = 0; i < NUM_LEDS; i++) {
-				leds[i] = CRGB::Green;
+				leds[i] = player_colour[0];
 			}
 
 		}
 		// Blue Wins
 		if (collision() ==  2) {
 			for (int i = 0; i < NUM_LEDS; i++) {
-				leds[i] = CRGB::Blue;
+				leds[i] = player_colour[1];
 			}
 
 		}
