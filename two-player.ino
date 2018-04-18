@@ -240,7 +240,7 @@ void serialEvent() {
 
 void readADC(int pid) {
 
-	int val = analogRead(player_adc[pid]) / 10;
+	int val = analogRead(player_adc[pid]) / 6;
 	player_energy[pid] += val;
 	if (val > 0) {
 		Serial.print(pid);
@@ -517,7 +517,7 @@ void loop() {
 	case WAITING:
 		fade_rate = 240;
 		//fadeAll();
-		if(millis() - setia_delay > 150){
+		if (millis() - setia_delay > 150) {
 			showSetia();
 			setia_delay = millis();
 		}
@@ -558,7 +558,7 @@ void loop() {
 
 
 
-		if (millis() - last_grow > 3000) {
+		if (millis() - last_grow > 1000) {
 			growPlayer(RED_PLAYER);
 			growPlayer(BLUE_PLAYER);
 			last_grow = millis();
@@ -603,11 +603,17 @@ void loop() {
 			fadeAll();
 			delay(100);
 		}
+
 		resetGame();
 		//Show winner
 		state = WAITING;
 		fade_rate = 150;
 		FastLED.clear();
+		for (int i = 0 ; i < 20; i++) {
+			showSetia();
+			delay(150);
+		}
+
 		break;
 	case END_GAME:
 
