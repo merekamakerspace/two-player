@@ -47,7 +47,7 @@ unsigned long last_twinkle = millis();
 unsigned long last_move = millis();
 
 unsigned char hue = 0;
-unsigned int delay_time = 30;
+unsigned int delay_time = 100;
 unsigned char fade_rate = 100;
 unsigned long last_grow = millis();
 
@@ -116,6 +116,7 @@ void show_digit(int digit, int start_row) {
 	FastLED.show();
 }
 
+
 void drawPlayer(int pid) {
 
 	for (int i = player_start[pid]; i >= player_end[pid]; i--) {
@@ -155,7 +156,7 @@ void movePlayer(int player_id) {
 	Serial.print(player_start[player_id]);
 	Serial.print(" ");
 	Serial.println(TRACK[player_start[player_id]]);
-	
+
 
 }
 
@@ -406,6 +407,64 @@ void setup() {
 
 }
 
+void show_letter(int letter, int start_row) {
+	//FastLED.clear();
+
+	for (int row = 0; row < 8; row++) {
+		if (start_row + row >= 0 ) {
+			byte line = SETIA[letter][row];
+
+			//Serial.println(line);
+			int col = 0;
+			for (byte mask = 00000001; mask > 0; mask <<= 1) { //iterate through bit mask
+				//int pixel = ((start_row + row) * 8) +  col;
+				int pixel  = ((start_row + row) * 8) + (7 - col);
+
+				if ((start_row + row) % 2) {
+					//pixel  = ((start_row + row) * 8) + (7 - col);
+					pixel = ((start_row + row) * 8) +  col;//pixel += 1;
+				}
+
+				if (pixel > 0 && pixel < NUM_LEDS) {
+					if (line & mask) {
+						leds[pixel] = CRGB::Blue;
+						//Serial.print("*");
+					} else {
+						//Serial.print(" ");
+						leds[pixel] = CRGB::Black;
+					}
+
+				}
+
+				//Serial.println(pixel);
+
+				col++;
+			}
+		}
+		//Serial.println();
+	}
+	//FastLED.show();
+}
+
+
+
+int setia_line = -32;
+
+void showSetia() {
+	FastLED.clear();
+	show_letter(4, setia_line + 32);
+	show_letter(3, setia_line + 24);
+	show_letter(2, setia_line + 16);
+	show_letter(1, setia_line + 8);
+	show_letter(0, setia_line);
+
+
+	FastLED.show();
+	setia_line++;
+	if (setia_line > 30) {
+		setia_line = -32;
+	}
+}
 
 
 void colours() {
@@ -442,12 +501,13 @@ void count_down() {
 }
 
 
-void drawTrack(){
-	for(int i =0; i < TRACK_LEN; i++){
-		leds[TRACK[i]] = CRGB(10,10, 10);
+void drawTrack() {
+	for (int i = 0; i < TRACK_LEN; i++) {
+		leds[TRACK[i]] = CRGB(10, 10, 10);
 	}
 }
 
+unsigned long setia_delay = millis();
 
 void loop() {
 
@@ -456,8 +516,12 @@ void loop() {
 
 	case WAITING:
 		fade_rate = 240;
-		fadeAll();
-		matrix();
+		//fadeAll();
+		if(millis() - setia_delay > 150){
+			showSetia();
+			setia_delay = millis();
+		}
+		//matrix();
 		//noisyFire();
 		readADC(RED_PLAYER);
 		readADC(BLUE_PLAYER);
