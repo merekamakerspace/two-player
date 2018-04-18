@@ -22,6 +22,10 @@
 #define BIKE1 A3
 #define BIKE2 A0
 
+#define PLAYER_ONE_START 2
+#define PLAYER_TWO_START 50
+
+#define PLAYER_START_LEN 2
 
 
 enum {RED_PLAYER, BLUE_PLAYER};
@@ -35,8 +39,8 @@ CRGB leds[NUM_LEDS];
 
 CRGB player_colour[] = {CRGB::Green, CRGB::Blue};
 
-int player_start[] = {2, 58};
-int player_end[] = {0, 56};
+int player_start[] = {PLAYER_ONE_START, PLAYER_TWO_START};
+int player_end[] = {PLAYER_ONE_START - PLAYER_START_LEN, PLAYER_TWO_START - PLAYER_START_LEN};
 
 
 unsigned long last_twinkle = millis();
@@ -312,11 +316,11 @@ void growPlayer(int player_id) {
 
 void resetGame() {
 	//Reset player positions
-	player_start[0] = 2;
-	player_end[0] = 0;
+	player_start[0] = PLAYER_ONE_START;
+	player_end[0] = PLAYER_ONE_START - PLAYER_START_LEN;
 
-	player_start[1] = 58;
-	player_end[1] = 56;
+	player_start[1] = PLAYER_TWO_START;
+	player_end[1] = PLAYER_TWO_START - PLAYER_START_LEN;
 
 	player_energy[0] = 0;
 	player_energy[1] = 0;
