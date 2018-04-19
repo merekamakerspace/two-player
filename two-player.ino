@@ -448,7 +448,7 @@ void show_letter(int letter, int start_row) {
 
 
 
-int setia_line = -32;
+int setia_line = 32;
 
 void showSetia() {
 	FastLED.clear();
@@ -460,9 +460,9 @@ void showSetia() {
 
 
 	FastLED.show();
-	setia_line++;
-	if (setia_line > 30) {
-		setia_line = -32;
+	setia_line--;
+	if (setia_line < -32) {
+		setia_line = 32;
 	}
 }
 
