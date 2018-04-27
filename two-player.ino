@@ -507,6 +507,34 @@ void drawTrack() {
 	}
 }
 
+int count = 0;
+
+
+void show_logo() {
+  count = random(23) * 8;
+  for (int j = 0; j < 8; j++) {
+    byte line = M_LOGO[j];
+
+    //Serial.println(line);
+
+    for (byte mask = 00000001; mask > 0; mask <<= 1) { //iterate through bit mask
+
+      if (line & mask) {
+        leds[count] = CRGB::Red;
+        //Serial.print("*");
+      } else {
+        //Serial.print(" ");
+        leds[count] = CRGB::Black;
+      }
+      count++;
+    }
+    ///Serial.println();
+  }
+  FastLED.show();
+}
+
+
+
 unsigned long setia_delay = millis();
 
 void loop() {
@@ -516,9 +544,11 @@ void loop() {
 
 	case WAITING:
 		fade_rate = 240;
-		//fadeAll();
-		if (millis() - setia_delay > 150) {
-			showSetia();
+		fadeAll();
+		if (millis() - setia_delay > 5000) {
+			show_logo();
+		
+			//showSetia();
 			setia_delay = millis();
 		}
 		//matrix();
@@ -609,9 +639,10 @@ void loop() {
 		state = WAITING;
 		fade_rate = 150;
 		FastLED.clear();
+		show_logo();
 		for (int i = 0 ; i < 20; i++) {
-			showSetia();
-			delay(150);
+			fadeAll();
+			delay(100);
 		}
 
 		break;
