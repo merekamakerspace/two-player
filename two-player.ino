@@ -23,7 +23,7 @@
 #define BIKE2 A0
 
 #define PLAYER_ONE_START 2
-#define PLAYER_TWO_START 50
+#define PLAYER_TWO_START 58
 
 #define PLAYER_START_LEN 2
 
