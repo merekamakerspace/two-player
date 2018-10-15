@@ -1,7 +1,5 @@
 #include "FastLED.h"
 #include "digits.h"
-#include "letters.h"
-
 #include "track.h"
 
 
@@ -21,8 +19,8 @@
 #define DATA_PIN_1 7
 #define DATA_PIN_2 8
 
-#define BIKE1 A0
-#define BIKE2 A3
+#define BIKE1 A3
+#define BIKE2 A0
 
 #define PLAYER_ONE_START 2
 #define PLAYER_TWO_START 58
@@ -30,7 +28,7 @@
 #define PLAYER_START_LEN 2
 
 
-enum {BLUE_PLAYER,RED_PLAYER};
+enum {RED_PLAYER, BLUE_PLAYER};
 
 enum {  WAITING, COUNT_DOWN, START_GAME, PLAYING, WIN, LOSE, END_GAME };
 
@@ -39,7 +37,7 @@ int state = WAITING;
 
 CRGB leds[NUM_LEDS];
 
-CRGB player_colour[] = {CRGB::Blue, CRGB::Grey};
+CRGB player_colour[] = {CRGB::Red, CRGB::Blue};
 
 int player_start[] = {PLAYER_ONE_START, PLAYER_TWO_START};
 int player_end[] = {PLAYER_ONE_START - PLAYER_START_LEN, PLAYER_TWO_START - PLAYER_START_LEN};
@@ -243,13 +241,9 @@ void serialEvent() {
 void readADC(int pid) {
 
 	int val = analogRead(player_adc[pid]) / 6;
+	if (val > 30) {
+		player_energy[pid] += val;
 	
-	//Blue player advantage
-	if(val > 0 && pid == 0){
-		val += 1;
-	}
-	player_energy[pid] += val;
-	if (val > 0) {
 		Serial.print(pid);
 		Serial.print(" ");
 		Serial.print(val);
@@ -343,11 +337,11 @@ void resetGame() {
 
 int collision () {
 	if (player_start[0] == player_end[1] ) {
-		Serial.println("Blue Wins");
+		Serial.println("Red Wins");
 		return 1;
 	}
 	if (player_start[1] == player_end[0] ) {
-		Serial.println("Other Wins");
+		Serial.println("Blue Wins");
 		return 2;
 	}
 	return 0;
@@ -362,7 +356,7 @@ CRGB matrix_color = player_colour[0];
 void matrix() {
 
 	for (int i = 0; i < NUM_LEDS; i++) {
-		leds[i].nscale8(240);
+		leds[i].nscale8(230);
 	}
 
 	if (matrix_row <= 0) {
@@ -376,7 +370,7 @@ void matrix() {
 		//hue += 128;
 	}
 
-	if (millis() - last_twinkle > 100) {
+	if (millis() - last_twinkle > 300) {
 		last_twinkle = millis();
 		matrix_row--;
 		int pixel = ((LEDS_PER_ROW) * (matrix_row) ) + matrix_col;
@@ -414,25 +408,12 @@ void setup() {
 
 }
 
-int getLetterPos(char letter){
-	int l_pos = 26; // " " by default
-
-	for(int i = 0; i < LETTERS_LEN; i++){
-		if(letter == LETTERS_KEY[i]){
-			l_pos = i;
-		}
-	}
-	return l_pos;
-}
-
-void show_letter(char letter, int start_row) {
+void show_letter(int letter, int start_row) {
 	//FastLED.clear();
-	
-	int l_pos = getLetterPos(letter);
 
 	for (int row = 0; row < 8; row++) {
 		if (start_row + row >= 0 ) {
-			byte line = LETTERS[l_pos][row];
+			byte line = SETIA[letter][row];
 
 			//Serial.println(line);
 			int col = 0;
@@ -468,38 +449,21 @@ void show_letter(char letter, int start_row) {
 
 
 
-int letter_line = 33;
-
-void showBN() {
-	
-	show_letter('M', letter_line);
-	show_letter('y', letter_line + 7);
-	show_letter('B', letter_line + 15);
-	show_letter('N', letter_line + 23);
-	//show_letter('', letter_line + 32);
-	
-
-	FastLED.show();
-	letter_line--;
-	if (letter_line < -32) {
-		letter_line = 33;
-	}
-}
-
+int setia_line = 32;
 
 void showSetia() {
 	FastLED.clear();
-	show_letter(4, letter_line + 32);
-	show_letter(3, letter_line + 24);
-	show_letter(2, letter_line + 16);
-	show_letter(1, letter_line + 8);
-	show_letter(0, letter_line);
+	show_letter(4, setia_line + 32);
+	show_letter(3, setia_line + 24);
+	show_letter(2, setia_line + 16);
+	show_letter(1, setia_line + 8);
+	show_letter(0, setia_line);
 
 
 	FastLED.show();
-	letter_line--;
-	if (letter_line < -32) {
-		letter_line = 32;
+	setia_line--;
+	if (setia_line < -32) {
+		setia_line = 32;
 	}
 }
 
@@ -548,31 +512,31 @@ int count = 0;
 
 
 void show_logo() {
-	count = random(23) * 8;
-	for (int j = 0; j < 8; j++) {
-		byte line = M_LOGO[j];
+  count = random(23) * 8;
+  for (int j = 0; j < 8; j++) {
+    byte line = M_LOGO[j];
 
-		//Serial.println(line);
+    //Serial.println(line);
 
-		for (byte mask = 00000001; mask > 0; mask <<= 1) { //iterate through bit mask
+    for (byte mask = 00000001; mask > 0; mask <<= 1) { //iterate through bit mask
 
-			if (line & mask) {
-				leds[count] = CRGB::Red;
-				//Serial.print("*");
-			} else {
-				//Serial.print(" ");
-				leds[count] = CRGB::Black;
-			}
-			count++;
-		}
-		///Serial.println();
-	}
-	FastLED.show();
+      if (line & mask) {
+        leds[count] = CRGB::Red;
+        //Serial.print("*");
+      } else {
+        //Serial.print(" ");
+        leds[count] = CRGB::Black;
+      }
+      count++;
+    }
+    ///Serial.println();
+  }
+  FastLED.show();
 }
 
 
 
-unsigned long text_delay = millis();
+unsigned long setia_delay = millis();
 
 void loop() {
 
@@ -582,11 +546,11 @@ void loop() {
 	case WAITING:
 		fade_rate = 240;
 		fadeAll();
-		if (millis() - text_delay > 200) {
+		if (millis() - setia_delay > 100) {
 			//show_logo();
-			showBN();
+			matrix();
 			//showSetia();
-			text_delay = millis();
+			setia_delay = millis();
 		}
 		//matrix();
 		//noisyFire();
@@ -675,7 +639,7 @@ void loop() {
 		//Show winner
 		state = WAITING;
 		fade_rate = 150;
-		//FastLED.clear();
+		FastLED.clear();
 		//show_logo();
 		for (int i = 0 ; i < 20; i++) {
 			fadeAll();
