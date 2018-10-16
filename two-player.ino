@@ -37,7 +37,7 @@ int state = WAITING;
 
 CRGB leds[NUM_LEDS];
 
-CRGB player_colour[] = {CRGB::Red, CRGB::Blue};
+CRGB player_colour[] = {CRGB::Green, CRGB::Blue};
 
 int player_start[] = {PLAYER_ONE_START, PLAYER_TWO_START};
 int player_end[] = {PLAYER_ONE_START - PLAYER_START_LEN, PLAYER_TWO_START - PLAYER_START_LEN};
